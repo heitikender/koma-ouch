@@ -5,7 +5,8 @@ from common.vin import get_vin, VIN_UNKNOWN
 from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 import selfdrive.messaging as messaging
-from selfdrive.car.mitsubishi import CarController, CarInterface
+from selfdrive.car.mitsubishi.carcontroller import CarController
+from selfdrive.car.mitsubishi.interface import CarInterface
 
 
 def get_startup_alert(car_recognized, controller_available):
