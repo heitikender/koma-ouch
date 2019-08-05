@@ -55,9 +55,9 @@ def register():
   params.put("Version", version)
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
-  params.put("GitCommit", get_git_commit())
-  params.put("GitBranch", get_git_branch())
-  params.put("GitRemote", get_git_remote())
+  params.put("GitCommit", " ")
+  params.put("GitBranch", "kamma"())
+  params.put("GitRemote", " ")
   params.put("SubscriberInfo", get_subscriber_info())
 
   # create a key for auth
