@@ -49,7 +49,7 @@ class CarInterface(object):
     ret.carVin = ""
     ret.isPandaBlack = False
 
-    ret.safetyModel = car.CarParams.SafetyModel.toyota
+    ret.safetyModel = ""
 
     # # pedal
     # ret.enableCruise = not ret.enableGasInterceptor
@@ -203,10 +203,10 @@ class CarInterface(object):
 #     ret.brakeMaxBP = [0.]
 #     ret.brakeMaxV = [1.]
 
-#     ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM) or is_panda_black
-#     ret.enableDsu = not check_ecu_msgs(fingerprint, ECU.DSU)
-#     ret.enableApgs = False #not check_ecu_msgs(fingerprint, ECU.APGS)
-#     ret.openpilotLongitudinalControl = ret.enableCamera and ret.enableDsu
+    ret.enableCamera = not check_ecu_msgs(fingerprint, ECU.CAM) or is_panda_black
+    ret.enableDsu = not check_ecu_msgs(fingerprint, ECU.DSU)
+    ret.enableApgs = False #not check_ecu_msgs(fingerprint, ECU.APGS)
+    ret.openpilotLongitudinalControl = ret.enableCamera and ret.enableDsu
     cloudlog.warn("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warn("ECU DSU Simulated: %r", ret.enableDsu)
     cloudlog.warn("ECU APGS Simulated: %r", ret.enableApgs)
