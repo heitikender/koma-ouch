@@ -49,7 +49,7 @@ class CarInterface(object):
     ret.carVin = ""
     ret.isPandaBlack = False
 
-    ret.safetyModel = ""
+    ret.safetyModel = car.CarParams.SafetyModel.toyota
 
     # # pedal
     # ret.enableCruise = not ret.enableGasInterceptor
