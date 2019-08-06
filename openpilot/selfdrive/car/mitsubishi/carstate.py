@@ -55,7 +55,6 @@ class CarState(object):
                          C=[1.0, 0.0],
                          K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
-    self.client = Client()
 
   def update(self, cp):
 
