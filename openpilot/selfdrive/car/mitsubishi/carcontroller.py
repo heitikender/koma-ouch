@@ -9,6 +9,7 @@ from selfdrive.car.mitsubishi.mitsubishican import make_can_msg
 #                                            create_fcw_command
 # from selfdrive.car.toyota.values import ECU, STATIC_MSGS, TSS2_CAR
 from selfdrive.can.packer import CANPacker
+from selfdrive.udp.udpclient import Client
 
 # VisualAlert = car.CarControl.HUDControl.VisualAlert
 # AudibleAlert = car.CarControl.HUDControl.AudibleAlert
@@ -121,6 +122,7 @@ class CarController(object):
     if enable_apg: self.fake_ecus.add(ECU.APGS)
 
     self.packer = CANPacker(dbc_name)
+    self.client = Client()
 
   def update(self, enabled, CS, frame, actuators,
              pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera,

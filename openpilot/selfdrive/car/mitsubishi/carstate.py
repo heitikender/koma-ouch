@@ -38,6 +38,7 @@ class CarState(object):
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
+    self.manualengage = Server()
 #     self.left_blinker_on = 0
 #     self.right_blinker_on = 0
 #     self.angle_offset = 0.
@@ -112,7 +113,10 @@ class CarState(object):
 #     self.user_brake = 0
 
     #cruise control
-    self.v_cruise_pcm = cp.vl["COMBOMETER"]['SPEED']
+    if not self.pcm_acc_active:
+      self.v_cruise_pcm = cp.vl["COMBOMETER"]['SPEED']
     self.pcm_acc_status = 8 # cp.vl["PCM_CRUISE"]['CRUISE_STATE'] # 8
-    self.pcm_acc_active = Server.getengaged()
+
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
+    self.pcm_acc_active = self.manualengage.getengaged()
+
