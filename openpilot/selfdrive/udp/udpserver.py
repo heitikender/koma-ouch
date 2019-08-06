@@ -6,7 +6,7 @@ import time
 
 # Gets Engaged bool from ROS
 
-class Server():
+class Server:
   def __init__(self):
     self.ENGAGED = False
     p = Process(target=self.start)
