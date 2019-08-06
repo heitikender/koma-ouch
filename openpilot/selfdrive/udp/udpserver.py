@@ -18,7 +18,7 @@ class Server:
     sock = socket.socket(socket.AF_INET, # Internet
                         socket.SOCK_DGRAM) # UDP
     sock.bind((UDP_IP, UDP_PORT))
-    print 'UDP Engage Server is running on', UDP_IP, UDP_PORT
+    print('UDP Engage Server is running on', UDP_IP, UDP_PORT)
     while True:
       data, addr = sock.recvfrom(1) # buffer size is 1 byte and unpacks to bool
       ENGAGED = bool(struct.unpack('b', data)[0])
