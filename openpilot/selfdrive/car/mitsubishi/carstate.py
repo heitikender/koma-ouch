@@ -5,6 +5,7 @@ from selfdrive.can.can_define import CANDefine
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.mitsubishi.values import CAR, DBC, STEER_THRESHOLD, NO_DSU_CAR
+from selfdrive.udp.udpserver import Server
 
 def parse_gear_shifter(gear, vals):
 
@@ -112,7 +113,7 @@ class CarState(object):
 #     self.user_brake = 0
 
     #cruise control
-    self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
-    self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
-    self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
+    self.v_cruise_pcm = cp.vl["COMBOMETER"]['SPEED']
+    self.pcm_acc_status = 8 # cp.vl["PCM_CRUISE"]['CRUISE_STATE'] # 8
+    self.pcm_acc_active = Server.getengaged()
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
