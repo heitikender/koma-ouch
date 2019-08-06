@@ -11,8 +11,8 @@ from selfdrive.car.mitsubishi.mitsubishican import make_can_msg
 from selfdrive.can.packer import CANPacker
 from selfdrive.udp.udpclient import Client
 
-# VisualAlert = car.CarControl.HUDControl.VisualAlert
-# AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+VisualAlert = car.CarControl.HUDControl.VisualAlert
+AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
 # # Accel limits
 # ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
@@ -55,25 +55,25 @@ from selfdrive.udp.udpclient import Client
 #   return accel, accel_steady
 
 
-# def process_hud_alert(hud_alert, audible_alert):
-#   # initialize to no alert
-#   steer = 0
-#   fcw = 0
-#   sound1 = 0
-#   sound2 = 0
+def process_hud_alert(hud_alert, audible_alert):
+  # initialize to no alert
+  steer = 0
+  fcw = 0
+  sound1 = 0
+  sound2 = 0
 
-#   if hud_alert == VisualAlert.fcw:
-#     fcw = 1
-#   elif hud_alert == VisualAlert.steerRequired:
-#     steer = 1
+  if hud_alert == VisualAlert.fcw:
+    fcw = 1
+  elif hud_alert == VisualAlert.steerRequired:
+    steer = 1
 
-#   if audible_alert == AudibleAlert.chimeWarningRepeat:
-#     sound1 = 1
-#   elif audible_alert != AudibleAlert.none:
-#     # TODO: find a way to send single chimes
-#     sound2 = 1
+  if audible_alert == AudibleAlert.chimeWarningRepeat:
+    sound1 = 1
+  elif audible_alert != AudibleAlert.none:
+    # TODO: find a way to send single chimes
+    sound2 = 1
 
-#   return steer, fcw, sound1, sound2
+  return steer, fcw, sound1, sound2
 
 
 # def ipas_state_transition(steer_angle_enabled, enabled, ipas_active, ipas_reset_counter):
@@ -235,15 +235,15 @@ class CarController(object):
     # # ui mesg is at 100Hz but we send asap if:
     # # - there is something to display
     # # - there is something to stop displaying
-    # alert_out = process_hud_alert(hud_alert, audible_alert)
+    alert_out = process_hud_alert(hud_alert, audible_alert)
     # steer, fcw, sound1, sound2 = alert_out
 
-    # if (any(alert_out) and not self.alert_active) or \
-    #    (not any(alert_out) and self.alert_active):
-    #   send_ui = True
-    #   self.alert_active = not self.alert_active
-    # else:
-    #   send_ui = False
+    if (any(alert_out) and not self.alert_active) or \
+       (not any(alert_out) and self.alert_active):
+      send_ui = True
+      self.alert_active = not self.alert_active
+    else:
+      send_ui = False
 
     # if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
     #   can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, left_line, right_line, left_lane_depart, right_lane_depart))
