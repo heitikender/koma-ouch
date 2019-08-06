@@ -1,22 +1,22 @@
-# import struct
+import struct
 
 # TODO: Determine if needed and changes
-# def fix(msg, addr):
-#   checksum = 0
-#   idh = (addr & 0xff00) >> 8
-#   idl = (addr & 0xff)
-#   checksum = idh + idl + len(msg) + 1
-#   for d_byte in msg:
-#     checksum += ord(d_byte)
-#   #return msg + chr(checksum & 0xFF)
-#   return msg + struct.pack("B", checksum & 0xFF)
+def fix(msg, addr):
+  checksum = 0
+  idh = (addr & 0xff00) >> 8
+  idl = (addr & 0xff)
+  checksum = idh + idl + len(msg) + 1
+  for d_byte in msg:
+    checksum += ord(d_byte)
+  #return msg + chr(checksum & 0xFF)
+  return msg + struct.pack("B", checksum & 0xFF)
 
 
 # TODO: Detemine changes
-# def make_can_msg(addr, dat, alt, cks=False):
-#   if cks:
-#     dat = fix(dat, addr)
-#   return [addr, 0, dat, alt]
+def make_can_msg(addr, dat, alt, cks=False):
+  if cks:
+    dat = fix(dat, addr)
+  return [addr, 0, dat, alt]
 
 # TODO: Determine if needed and changes
 # def create_video_target(frame, addr):
