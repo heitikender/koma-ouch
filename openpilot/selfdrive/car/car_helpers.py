@@ -19,9 +19,9 @@ def get_startup_alert(car_recognized, controller_available):
 
 #return interfaces for mitsubishi miev only
 def get_car(logcan, sendcan, is_panda_black=False):
-
+  cloudlog.warn("CarParams get_car is loading")
   candidate = "MITSUBISHI MIEV"
   vin = "xxxxxxxxxxxx"
-  car_params = CarInterface.get_params()
-
+  car_params = CarInterface.get_params(None)
+  cloudlog.warn("CarParams is loading %s" % candidate)
   return CarInterface(car_params, CarController), car_params

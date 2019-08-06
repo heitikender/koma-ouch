@@ -11,6 +11,8 @@ from selfdrive.swaglog import cloudlog
 
 class CarInterface(object):
    def __init__(self, CP, CarController):
+     cloudlog.warn("CarParams loaded interface.py")
+     print("CarParams loading interface.py")
      self.CP = CP
      self.VM = VehicleModel(CP)
 
@@ -23,7 +25,6 @@ class CarInterface(object):
      self.CS = CarState(CP)
 
      self.cp = get_can_parser(CP)
-     self.cp_cam = get_cam_can_parser(CP)
 
      self.forwarding_camera = False
 
@@ -40,36 +41,68 @@ class CarInterface(object):
      return 1.0
 
    @staticmethod
-   def get_params():
-
+   def get_params(fingerprint):
+    print("CarParams new message")
     ret = car.CarParams.new_message()
-
-    ret.carName = "mitsubichi"
-    ret.carFingerprint = "MITSUBISHI MIEV"
+    print("CarParams setting fingerprint and safety")
+    ret.carName = "mitsubishi"
+    ret.carFingerprint = "MIEV"
     ret.carVin = ""
     ret.isPandaBlack = False
-
+    
     ret.safetyModel = car.CarParams.SafetyModel.toyota
-
+    print("CarParams done settng safety model")
     # # pedal
-    # ret.enableCruise = not ret.enableGasInterceptor
+    ret.enableCruise = True #not ret.enableGasInterceptor
 
+    print("CarParams setting car tuning")
+ 
     ret.steerActuatorDelay = 0.1  # Default delay
-    ret.lateralTuning.init('pid')
+    ret.lateralTuning.init('pid')   
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+    
+    print("CarParams set up PID") 
+    
+    stop_and_go = True
+    ret.safetyParam = 100
+    ret.wheelbase = 2.55
+    ret.steerRatio = 17.
+    tire_stiffness_factor = 0.444
+    ret.mass = 1080. + STD_CARGO_KG
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]
     ret.lateralTuning.pid.kf = 0.001388889 # 1 / max angle
+    
+    print("CarParams done setting tuning")
+    
     ret.steerRateCost = 1.0
+    print("CarParams steerRateCost set") #% ret.steerRateCost
     ret.centerToFront = ret.wheelbase * 0.44
-    tire_stiffness_factor = 0.5328
-    ret.min_EnableSpeed = 1
+    print("CarParams centerToFront set") #% ret.centerToFront
+    ret.enableGasInterceptor = False
+    print("CarParams enableGasInterceptor set to False")
 
+    ret.minEnableSpeed = -1.
+    print("CarParams done setting ratecost and min enable speed")
+
+    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
+                                                                         tire_stiffness_factor=tire_stiffness_factor)
+    ret.steerRatioRear = 0.
+    ret.steerControlType = car.CarParams.SteerControlType.angle
+
+    # steer, gas, brake limitations VS speed
+    ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
+    ret.steerMaxV = [1., 1.]  # 2/3rd torque allowed above 45 kph
+    ret.brakeMaxBP = [0.]
+    ret.brakeMaxV = [1.]
+    
     ret.enableCamera = False #not check_ecu_msgs(fingerprint, ECU.CAM) or is_panda_black
-    ret.enableDsu = not check_ecu_msgs(fingerprint, ECU.DSU)
+    ret.enableDsu = True #not check_ecu_msgs(fingerprint, ECU.DSU)
     ret.enableApgs = False #not check_ecu_msgs(fingerprint, ECU.APGS)
-    ret.openpilotLongitudinalControl = ret.enableCamera and ret.enableDsu
-    cloudlog.warn("ECU DSU Simulated: %r", ret.enableDsu)
+    ret.openpilotLongitudinalControl = True #ret.enableCamera and ret.enableDsu
+    cloudlog.warn("CarParams ECU DSU Simulated: %r", ret.enableDsu)
 
+    ret.steerLimitAlert = False
 
     ret.longitudinalTuning.deadzoneBP = [0., 9.]
     ret.longitudinalTuning.deadzoneV = [0., .15]
@@ -82,7 +115,7 @@ class CarInterface(object):
     ret.gasMaxV = [0.2, 0.5, 0.7]
     ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
     ret.longitudinalTuning.kiV = [0.18, 0.12]
-
+    print("CarParams returning")
     return ret
 
    # returns a car.CarState
