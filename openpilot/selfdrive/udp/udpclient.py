@@ -10,11 +10,16 @@ class Client:
 
 # #Testing
 # import struct
-# c = Client()
+# import time
+# c = Client("192.168.200.20")
 # a = float(0)
-# b = float90
+# b = float(90)
+# z = True
 # while(True):
-#     a += 1
-#     b += 10
-#     m = struct.pack('ff', a, b)
+#     z = not z
+#     m = struct.pack('b', z)
 #     c.send_message(m)
+#     print
+#     print time.time()
+#     print z
+#     time.sleep(10)
