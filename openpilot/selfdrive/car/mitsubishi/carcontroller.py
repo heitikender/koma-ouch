@@ -1,3 +1,4 @@
+import struct
 from cereal import car
 from common.numpy_fast import clip, interp
 # from selfdrive.car import apply_toyota_steer_torque_limits
@@ -11,25 +12,25 @@ from selfdrive.udp.udpclient import Client
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
-# # Accel limits
-# ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
-# ACCEL_MAX = 1.5  # 1.5 m/s2
-# ACCEL_MIN = -3.0 # 3   m/s2
-# ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
+# Accel limits
+ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
+ACCEL_MAX = 1.5  # 1.5 m/s2
+ACCEL_MIN = -3.0 # 3   m/s2
+ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
-# # Steer torque limits
-# class SteerLimitParams:
-#   STEER_MAX = 1500
-#   STEER_DELTA_UP = 10       # 1.5s time to peak torque
-#   STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
-#   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+# Steer torque limits
+class SteerLimitParams:
+  STEER_MAX = 1500
+  STEER_DELTA_UP = 10       # 1.5s time to peak torque
+  STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
+  STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
 
-# # Steer angle limits (tested at the Crows Landing track and considered ok)
-# ANGLE_MAX_BP = [0., 5.]
-# ANGLE_MAX_V = [510., 300.]
-# ANGLE_DELTA_BP = [0., 5., 15.]
-# ANGLE_DELTA_V = [5., .8, .15]     # windup limit
-# ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
+# Steer angle limits (tested at the Crows Landing track and considered ok)
+ANGLE_MAX_BP = [0., 5.]
+ANGLE_MAX_V = [510., 300.]
+ANGLE_DELTA_BP = [0., 5., 15.]
+ANGLE_DELTA_V = [5., .8, .15]     # windup limit
+ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
 
 # TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
 #               0x363, 0x364, 0x365, 0x370, 0x371, 0x372,
@@ -37,19 +38,19 @@ AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 #               0x383]
 
 
-# def accel_hysteresis(accel, accel_steady, enabled):
+def accel_hysteresis(accel, accel_steady, enabled):
 
-#   # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
-#   if not enabled:
-#     # send 0 when disabled, otherwise acc faults
-#     accel_steady = 0.
-#   elif accel > accel_steady + ACCEL_HYST_GAP:
-#     accel_steady = accel - ACCEL_HYST_GAP
-#   elif accel < accel_steady - ACCEL_HYST_GAP:
-#     accel_steady = accel + ACCEL_HYST_GAP
-#   accel = accel_steady
+  # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
+  if not enabled:
+    # send 0 when disabled, otherwise acc faults
+    accel_steady = 0.
+  elif accel > accel_steady + ACCEL_HYST_GAP:
+    accel_steady = accel - ACCEL_HYST_GAP
+  elif accel < accel_steady - ACCEL_HYST_GAP:
+    accel_steady = accel + ACCEL_HYST_GAP
+  accel = accel_steady
 
-#   return accel, accel_steady
+  return accel, accel_steady
 
 
 def process_hud_alert(hud_alert, audible_alert):
@@ -73,28 +74,28 @@ def process_hud_alert(hud_alert, audible_alert):
   return steer, fcw, sound1, sound2
 
 
-# def ipas_state_transition(steer_angle_enabled, enabled, ipas_active, ipas_reset_counter):
+def ipas_state_transition(steer_angle_enabled, enabled, ipas_active, ipas_reset_counter):
 
-#   if enabled and not steer_angle_enabled:
-#     #ipas_reset_counter = max(0, ipas_reset_counter - 1)
-#     #if ipas_reset_counter == 0:
-#     #  steer_angle_enabled = True
-#     #else:
-#     #  steer_angle_enabled = False
-#     #return steer_angle_enabled, ipas_reset_counter
-#     return True, 0
+  if enabled and not steer_angle_enabled:
+    ipas_reset_counter = max(0, ipas_reset_counter - 1)
+    if ipas_reset_counter == 0:
+      steer_angle_enabled = True
+    else:
+      steer_angle_enabled = False
+      return steer_angle_enabled, ipas_reset_counter
+    return True, 0
 
-#   elif enabled and steer_angle_enabled:
-#     if steer_angle_enabled and not ipas_active:
-#       ipas_reset_counter += 1
-#     else:
-#       ipas_reset_counter = 0
-#     if ipas_reset_counter > 10:  # try every 0.1s
-#       steer_angle_enabled = False
-#     return steer_angle_enabled, ipas_reset_counter
+  elif enabled and steer_angle_enabled: 
+    if steer_angle_enabled and not ipas_active:
+       ipas_reset_counter += 1  
+    else:
+       ipas_reset_counter = 0 
+    if ipas_reset_counter > 10:  # try every 0.1s
+       steer_angle_enabled = False
+    return steer_angle_enabled, ipas_reset_counter
 
-#   else:
-#     return False, 0
+  else:
+    return False, 0
 
 
 class CarController(object):
@@ -114,9 +115,9 @@ class CarController(object):
     self.last_fault_frame = -200
 
     self.fake_ecus = set()
-    if enable_camera: self.fake_ecus.add(ECU.CAM)
+    #if enable_camera: self.fake_ecus.add(ECU.CAM)
     if enable_dsu: self.fake_ecus.add(ECU.DSU)
-    if enable_apg: self.fake_ecus.add(ECU.APGS)
+    #if enable_apg: self.fake_ecus.add(ECU.APGS)
 
     self.packer = CANPacker(dbc_name)
     self.client = Client()
@@ -125,7 +126,7 @@ class CarController(object):
              pcm_cancel_cmd, hud_alert, audible_alert, forwarding_camera,
              left_line, right_line, lead, left_lane_depart, right_lane_depart):
     can_sends = []
-    # # *** compute control surfaces ***
+    # *** compute control surfaces ***
 
     # gas and brake
 
@@ -157,8 +158,8 @@ class CarController(object):
     else:
       apply_steer_req = 1
 
-    self.steer_angle_enabled, self.ipas_reset_counter = \
-      ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
+#    self.steer_angle_enabled, self.ipas_reset_counter = \
+#      ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
     #print("{0} {1} {2}".format(self.steer_angle_enabled, self.ipas_reset_counter, CS.ipas_active))
 
     # steer angle
@@ -256,10 +257,10 @@ class CarController(object):
 
     # TODO: UDP Client
     # Compute Steering Angle deg
-    steering = apply_accel
+    steering = apply_angle
     # Compute Accelleration mps2
     acceleration = apply_accel
     
     message = struct.pack('ff', steering, acceleration)
-    self.client.sendmessage(message)
+    self.client.send_message(message)
     return can_sends

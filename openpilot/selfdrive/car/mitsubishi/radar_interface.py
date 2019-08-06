@@ -4,7 +4,7 @@ import time
 from selfdrive.can.parser import CANParser
 from cereal import car
 from common.realtime import sec_since_boot
-from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSS2_CAR
+from selfdrive.car.mitsubishi.values import NO_DSU_CAR, DBC, TSS2_CAR
 
 def _create_radar_can_parser(car_fingerprint):
   dbc_f = DBC[car_fingerprint]['radar']

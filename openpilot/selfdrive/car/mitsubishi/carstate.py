@@ -16,7 +16,7 @@ def get_can_parser(CP):
   signals = [
     # sig_name, sig_address, default
     ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
-    ("STEER_ANGLE", "STEER_RATE", 0),
+    ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
     ("GEAR", "GEAR_PACKET", 0),
     ("SPEED", "COMBOMETER", 0),
   ]
@@ -27,7 +27,7 @@ def get_can_parser(CP):
   ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
-
+  #return CANParser(DBC[CP.carFingerprint]['pt'], [], [], 0)
 
 class CarState(object):
   def __init__(self, CP):
@@ -50,7 +50,7 @@ class CarState(object):
                          C=[1.0, 0.0],
                          K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
-
+    self.pcm_acc_active = False
   def update(self, cp):
 
     # update prevs, update must run once per loop
@@ -96,7 +96,7 @@ class CarState(object):
 #     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
     self.steer_state = 10 #cp.vl["EPS_STATUS"]['LKA_STATE']
     self.steer_error = False #cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5]
-#     self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
+    self.ipas_active = False
     self.brake_error = 0
     self.steer_torque_driver = 0 #cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_DRIVER']
     self.steer_torque_motor = 0 #cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']

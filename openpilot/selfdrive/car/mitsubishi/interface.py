@@ -94,7 +94,7 @@ class CarInterface(object):
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [1.]
     
-    ret.enableCamera = False #not check_ecu_msgs(fingerprint, ECU.CAM) or is_panda_black
+    ret.enableCamera = True #not check_ecu_msgs(fingerprint, ECU.CAM) or is_panda_black
     ret.enableDsu = True #not check_ecu_msgs(fingerprint, ECU.DSU)
     ret.enableApgs = False #not check_ecu_msgs(fingerprint, ECU.APGS)
     ret.openpilotLongitudinalControl = True #ret.enableCamera and ret.enableDsu
@@ -126,7 +126,7 @@ class CarInterface(object):
      # create message
      ret = car.CarState.new_message()
 
-     ret.canValid = self.cp.can_valid
+     ret.canValid = True
 
      # speeds
      ret.vEgo = self.CS.v_ego
