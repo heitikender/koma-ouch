@@ -16,6 +16,7 @@ def get_can_parser(CP):
   signals = [
     # sig_name, sig_address, default
     ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
+    ("STEER_ANGLE", "STEER_RATE", 0),
     ("GEAR", "GEAR_PACKET", 0),
     ("SPEED", "COMBOMETER", 0),
   ]
@@ -33,7 +34,8 @@ class CarState(object):
 
     self.CP = CP
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = self.can_define.dv["GEAR_PACKET"]['GEAR']
+    print("DBC PARSED: %s" % DBC[CP.carFingerprint]['pt'])
+    self.shifter_values = 'D' #self.can_define.dv["GEAR_PACKET"]['GEAR']
     self.manualengage = Server()
 
      # initialize can parser
@@ -86,8 +88,7 @@ class CarState(object):
 
     self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
-    can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
-    self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
+    self.gear_shifter = 'drive' #parse_gear_shifter(can_gear, self.shifter_values)
     self.main_on = True #cp.vl["PCM_CRUISE_2"]['MAIN_ON']
 #     self.left_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
 #     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
@@ -109,6 +110,6 @@ class CarState(object):
       self.v_cruise_pcm = cp.vl["COMBOMETER"]['SPEED']
     self.pcm_acc_status = 8 # cp.vl["PCM_CRUISE"]['CRUISE_STATE'] # 8
 
-    self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
+    self.brake_lights = False #bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
     self.pcm_acc_active = self.manualengage.getengaged()
 

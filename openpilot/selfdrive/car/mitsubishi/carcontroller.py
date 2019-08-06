@@ -1,13 +1,9 @@
 from cereal import car
 from common.numpy_fast import clip, interp
 # from selfdrive.car import apply_toyota_steer_torque_limits
-from selfdrive.car import create_gas_command
 from selfdrive.car.mitsubishi.mitsubishican import make_can_msg
-# from selfdrive.car.toyota.toyotacan import make_can_msg, create_video_target,\
-#                                            create_steer_command, create_ui_command, \
-#                                            create_ipas_steer_command, create_accel_command, \
-#                                            create_fcw_command
-# from selfdrive.car.toyota.values import ECU, STATIC_MSGS, TSS2_CAR
+from selfdrive.car.mitsubishi.mitsubishican import make_can_msg
+from selfdrive.car.mitsubishi.values import ECU, STATIC_MSGS, TSS2_CAR
 from selfdrive.can.packer import CANPacker
 from selfdrive.udp.udpclient import Client
 
