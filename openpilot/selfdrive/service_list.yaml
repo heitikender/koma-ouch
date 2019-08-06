@@ -80,6 +80,8 @@ testModel: [8040, false, 0.]
 testLiveLocation: [8045, false, 0.]
 testJoystick: [8056, false, 0.]
 
+# 5005 is reserved for MIEV UDP Client/Server
+
 # 8080 is reserved for slave testing daemon
 # 8762 is reserved for logserver
 
