@@ -8,13 +8,7 @@ from selfdrive.car.mitsubishi.values import CAR, DBC, STEER_THRESHOLD, NO_DSU_CA
 from selfdrive.udp.udpserver import Server
 
 def parse_gear_shifter(gear, vals):
-
-  val_to_capnp = {'P': 'park', 'R': 'reverse', 'N': 'neutral',
-                  'D': 'drive', 'B': 'brake'}
-  try:
-    return val_to_capnp[vals[gear]]
-  except KeyError:
-    return "unknown"
+  return 'drive'
 
 
 def get_can_parser(CP):
