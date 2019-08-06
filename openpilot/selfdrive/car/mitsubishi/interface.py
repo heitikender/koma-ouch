@@ -44,7 +44,7 @@ class CarInterface(object):
     ret = car.CarParams.new_message()
     print("CarParams setting fingerprint and safety")
     ret.carName = "mitsubishi"
-    ret.carFingerprint = "MIEV"
+    ret.carFingerprint = "MITSUBISHI MIEV"
     ret.carVin = ""
     ret.isPandaBlack = False
     

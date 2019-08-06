@@ -33,7 +33,6 @@ def check_ecu_msgs(fingerprint, ecu):
 
 FINGERPRINTS = {
   CAR.MIEV: [{
-    "nothing"
   }],
 }
 

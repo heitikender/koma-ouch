@@ -435,7 +435,7 @@ def controlsd_thread(gctx=None):
   # wait for health and CAN packets
   hw_type = messaging.recv_one(sm.sock['health']).health.hwType
   is_panda_black = hw_type == log.HealthData.HwType.blackPanda
-  wait_for_can(logcan)
+  #wait_for_can(logcan)
 
   CI, CP = get_car(logcan, sendcan, is_panda_black)
   logcan.close()
