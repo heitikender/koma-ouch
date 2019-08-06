@@ -55,17 +55,17 @@ class CarState(object):
 #     self.prev_left_blinker_on = self.left_blinker_on
 #     self.prev_right_blinker_on = self.right_blinker_on
 
-#     self.door_all_closed = not any([cp.vl["SEATS_DOORS"]['DOOR_OPEN_FL'], cp.vl["SEATS_DOORS"]['DOOR_OPEN_FR'],
+    self.door_all_closed = True #not any([cp.vl["SEATS_DOORS"]['DOOR_OPEN_FL'], cp.vl["SEATS_DOORS"]['DOOR_OPEN_FR'],
 #                                     cp.vl["SEATS_DOORS"]['DOOR_OPEN_RL'], cp.vl["SEATS_DOORS"]['DOOR_OPEN_RR']])
-#     self.seatbelt = not cp.vl["SEATS_DOORS"]['SEATBELT_DRIVER_UNLATCHED']
+    self.seatbelt = True
 
-#     self.brake_pressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
+    self.brake_pressed = False #cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED']
 #     if self.CP.enableGasInterceptor:
 #       self.pedal_gas = (cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS'] + cp.vl["GAS_SENSOR"]['INTERCEPTOR_GAS2']) / 2.
 #     else:
     self.pedal_gas = 0 #cp.vl["GAS_PEDAL"]['GAS_PEDAL']
-#     self.car_gas = self.pedal_gas
-#     self.esp_disabled = cp.vl["ESP_CONTROL"]['TC_DISABLED']
+    self.car_gas = 0
+    self.esp_disabled = False
 
     # # calc best v_ego estimate, by averaging two opposite corners
     # self.v_wheel_fl = cp.vl["ABS_FRONT"]['WHEEL_SPEED_FL'] * CV.KPH_TO_MS
@@ -93,7 +93,7 @@ class CarState(object):
 #     self.right_blinker_on = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
 
 #     # 2 is standby, 10 is active. TODO: check that everything else is really a faulty state
-    self.steer_state = 3 #cp.vl["EPS_STATUS"]['LKA_STATE']
+    self.steer_state = 10 #cp.vl["EPS_STATUS"]['LKA_STATE']
     self.steer_error = False #cp.vl["EPS_STATUS"]['LKA_STATE'] not in [1, 5]
 #     self.ipas_active = cp.vl['EPS_STATUS']['IPAS_STATE'] == 3
     self.brake_error = 0
