@@ -22,8 +22,8 @@ def get_can_parser(CP):
   ]
 
   checks = [
-    ("STEER_ANGLE_SENSOR", 20),
-    ("MOTOR", 20),
+    #("STEER_ANGLE_SENSOR", 20),
+    #("MOTOR", 20),
   ]
 
   return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
