@@ -42,12 +42,9 @@ if __name__ == "__main__":
             z = not z
             m = struct.pack('b', z)
             c.send_message(m)
-            print "Sending", z
-            print "5 seconds..."
-            time.sleep(5)
             s.getdata()
             print "1 second..."
-            time.sleep(5)
+            time.sleep(1)
     except:
         pass
     print 'ending'

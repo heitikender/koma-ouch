@@ -5,7 +5,7 @@ from selfdrive.can.can_define import CANDefine
 from selfdrive.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.mitsubishi.values import CAR, DBC, STEER_THRESHOLD, NO_DSU_CAR
-from selfdrive.udp.udpserver import Server
+# from selfdrive.udp.udpserver import Server
 
 def parse_gear_shifter(gear, vals):
   return 'drive'
@@ -36,7 +36,14 @@ class CarState(object):
     self.can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
     print("DBC PARSED: %s" % DBC[CP.carFingerprint]['pt'])
     self.shifter_values = 'D' #self.can_define.dv["GEAR_PACKET"]['GEAR']
-    self.manualengage = Server()
+
+    self.ENGAGED = False
+    self.UDP_IP = "192.168.200.20"
+    self.UDP_PORT = 5005
+
+    self.sock = socket.socket(socket.AF_INET, # Internet
+                        socket.SOCK_DGRAM) # UDP
+    self.sock.bind((self.UDP_IP, self.UDP_PORT))
 
      # initialize can parser
     self.car_fingerprint = CP.carFingerprint
@@ -109,7 +116,11 @@ class CarState(object):
     if not self.pcm_acc_active:
       self.v_cruise_pcm = cp.vl["COMBOMETER"]['SPEED']
     self.pcm_acc_status = 8 # cp.vl["PCM_CRUISE"]['CRUISE_STATE'] # 8
-
     self.brake_lights = False #bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
-    self.pcm_acc_active = self.manualengage.getengaged()
-
+    try:
+      data, addr = sock.recvfrom(1) # buffer size is 1 byte and unpacks to bool
+      self.pcm_acc_active = (bool(struct.unpack('b', data)[0]))
+      print("Received message from address:", addr)
+      print("PCM_ACC_ACTIVE:", self.pcm_acc_active)
+    except:
+      pass
