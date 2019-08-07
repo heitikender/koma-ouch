@@ -132,12 +132,12 @@ class CarController(object):
 
     apply_gas = clip(actuators.gas, 0., 1.)
 
-    if CS.CP.enableGasInterceptor:
+    #if CS.CP.enableGasInterceptor:
       # send only negative accel if interceptor is detected. otherwise, send the regular value
       # +0.06 offset to reduce ABS pump usage when OP is engaged
-      apply_accel = 0.06 - actuators.brake
-    else:
-      apply_accel = actuators.gas - actuators.brake
+    #  apply_accel = 0.06 - actuators.brake
+    #else:
+    apply_accel = actuators.gas - actuators.brake
 
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
@@ -148,15 +148,15 @@ class CarController(object):
     # apply_steer = apply_toyota_steer_torque_limits(apply_steer, self.last_steer, CS.steer_torque_motor, SteerLimitParams)
 
     # only cut torque when steer state is a known fault
-    if CS.steer_state in [9, 25]:
-      self.last_fault_frame = frame
+    #if CS.steer_state in [9, 25]:
+    #  self.last_fault_frame = frame
 
     # Cut steering for 2s after fault
-    if not enabled or (frame - self.last_fault_frame < 200):
-      apply_steer = 0
-      apply_steer_req = 0
-    else:
-      apply_steer_req = 1
+    #if not enabled or (frame - self.last_fault_frame < 200):
+    #  apply_steer = 0
+    #  apply_steer_req = 0
+    #else:
+    apply_steer_req = 1
 
 #    self.steer_angle_enabled, self.ipas_reset_counter = \
 #      ipas_state_transition(self.steer_angle_enabled, enabled, CS.ipas_active, self.ipas_reset_counter)
@@ -183,12 +183,11 @@ class CarController(object):
     #  pcm_cancel_cmd = 1
 
     # on entering standstill, send standstill request
-    #if CS.standstill and not self.last_standstill:
-    #  self.standstill_req = True
-    #if CS.pcm_acc_status != 8:
-      # pcm entered standstill or it's disabled
-    #  self.standstill_req = False
-    self.standstill_req = False
+    if CS.standstill and not self.last_standstill:
+      self.standstill_req = True
+    if CS.pcm_acc_status != 8:
+      #pcm entered standstill or it's disabled
+      self.standstill_req = False
 
     self.last_steer = apply_steer
     self.last_angle = apply_angle
@@ -234,15 +233,15 @@ class CarController(object):
     # # ui mesg is at 100Hz but we send asap if:
     # # - there is something to display
     # # - there is something to stop displaying
-    alert_out = process_hud_alert(hud_alert, audible_alert)
+    #alert_out = process_hud_alert(hud_alert, audible_alert)
     # steer, fcw, sound1, sound2 = alert_out
 
-    if (any(alert_out) and not self.alert_active) or \
-       (not any(alert_out) and self.alert_active):
-      send_ui = True
-      self.alert_active = not self.alert_active
-    else:
-      send_ui = False
+    #if (any(alert_out) and not self.alert_active) or \
+     #  (not any(alert_out) and self.alert_active):
+      #send_ui = True
+      #self.alert_active = not self.alert_active
+    #else:
+     # send_ui = False
 
     # if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
     #   can_sends.append(create_ui_command(self.packer, steer, sound1, sound2, left_line, right_line, left_lane_depart, right_lane_depart))
@@ -253,10 +252,11 @@ class CarController(object):
 
 
     #*** static msgs ***
+    print "CAR CONTROLLER FRAME:", frame
     for (addr, ecu, cars, bus, fr_step, vl) in STATIC_MSGS:
-      can_sends.append(make_can_msg(addr, vl, bus, False))
+      if frame % fr_step == 0:
+        can_sends.append(make_can_msg(addr, vl, bus, False))
 
-    # TODO: UDP Client
     # Compute Steering Angle deg
     steering = apply_angle
     # Compute Accelleration mps2

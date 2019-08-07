@@ -282,132 +282,132 @@ def data_send(sm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, ca
               carcontrol, carevents, carparams, controlsstate, sendcan, AM, driver_status,
               LaC, LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev):
   """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
+  try:
+    CC = car.CarControl.new_message()
+    CC.enabled = isEnabled(state)
+    CC.actuators = actuators
 
-  CC = car.CarControl.new_message()
-  CC.enabled = isEnabled(state)
-  CC.actuators = actuators
+    CC.cruiseControl.override = True
+    CC.cruiseControl.cancel = not CP.enableCruise or (not isEnabled(state) and CS.cruiseState.enabled)
 
-  CC.cruiseControl.override = True
-  CC.cruiseControl.cancel = not CP.enableCruise or (not isEnabled(state) and CS.cruiseState.enabled)
+    # Some override values for Honda
+    brake_discount = (1.0 - clip(actuators.brake * 3., 0.0, 1.0))  # brake discount removes a sharp nonlinearity
+    CC.cruiseControl.speedOverride = float(max(0.0, (LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount) if CP.enableCruise else 0.0)
+    CC.cruiseControl.accelOverride = CI.calc_accel_override(CS.aEgo, sm['plan'].aTarget, CS.vEgo, sm['plan'].vTarget)
 
-  # Some override values for Honda
-  brake_discount = (1.0 - clip(actuators.brake * 3., 0.0, 1.0))  # brake discount removes a sharp nonlinearity
-  CC.cruiseControl.speedOverride = float(max(0.0, (LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount) if CP.enableCruise else 0.0)
-  CC.cruiseControl.accelOverride = CI.calc_accel_override(CS.aEgo, sm['plan'].aTarget, CS.vEgo, sm['plan'].vTarget)
+    CC.hudControl.setSpeed = float(v_cruise_kph * CV.KPH_TO_MS)
+    CC.hudControl.speedVisible = isEnabled(state)
+    CC.hudControl.lanesVisible = isEnabled(state)
+    CC.hudControl.leadVisible = sm['plan'].hasLead
 
-  CC.hudControl.setSpeed = float(v_cruise_kph * CV.KPH_TO_MS)
-  CC.hudControl.speedVisible = isEnabled(state)
-  CC.hudControl.lanesVisible = isEnabled(state)
-  CC.hudControl.leadVisible = sm['plan'].hasLead
+    right_lane_visible = sm['pathPlan'].rProb > 0.5
+    left_lane_visible = sm['pathPlan'].lProb > 0.5
 
-  right_lane_visible = sm['pathPlan'].rProb > 0.5
-  left_lane_visible = sm['pathPlan'].lProb > 0.5
+    CC.hudControl.rightLaneVisible = bool(right_lane_visible)
+    CC.hudControl.leftLaneVisible = bool(left_lane_visible)
 
-  CC.hudControl.rightLaneVisible = bool(right_lane_visible)
-  CC.hudControl.leftLaneVisible = bool(left_lane_visible)
+    blinker = CS.leftBlinker or CS.rightBlinker
+    ldw_allowed = CS.vEgo > 12.5 and not blinker
 
-  blinker = CS.leftBlinker or CS.rightBlinker
-  ldw_allowed = CS.vEgo > 12.5 and not blinker
+    if len(list(sm['pathPlan'].rPoly)) == 4:
+      CC.hudControl.rightLaneDepart = bool(ldw_allowed and sm['pathPlan'].rPoly[3] > -(1 + CAMERA_OFFSET) and right_lane_visible)
+    if len(list(sm['pathPlan'].lPoly)) == 4:
+      CC.hudControl.leftLaneDepart = bool(ldw_allowed and sm['pathPlan'].lPoly[3] < (1 - CAMERA_OFFSET) and left_lane_visible)
 
-  if len(list(sm['pathPlan'].rPoly)) == 4:
-    CC.hudControl.rightLaneDepart = bool(ldw_allowed and sm['pathPlan'].rPoly[3] > -(1 + CAMERA_OFFSET) and right_lane_visible)
-  if len(list(sm['pathPlan'].lPoly)) == 4:
-    CC.hudControl.leftLaneDepart = bool(ldw_allowed and sm['pathPlan'].lPoly[3] < (1 - CAMERA_OFFSET) and left_lane_visible)
+    CC.hudControl.visualAlert = AM.visual_alert
+    CC.hudControl.audibleAlert = AM.audible_alert
 
-  CC.hudControl.visualAlert = AM.visual_alert
-  CC.hudControl.audibleAlert = AM.audible_alert
+    if not read_only:
+      # send car controls over can
+      can_sends = CI.apply(CC)
+      sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
+    force_decel = driver_status.awareness < 0.
 
-  if not read_only:
-    # send car controls over can
-    can_sends = CI.apply(CC)
-    sendcan.send(can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
+    # controlsState
+    dat = messaging.new_message()
+    dat.init('controlsState')
+    dat.valid = CS.canValid
+    dat.controlsState = {
+      "alertText1": AM.alert_text_1,
+      "alertText2": AM.alert_text_2,
+      "alertSize": AM.alert_size,
+      "alertStatus": AM.alert_status,
+      "alertBlinkingRate": AM.alert_rate,
+      "alertType": AM.alert_type,
+      "alertSound": "",  # no EON sounds yet
+      "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
+      "driverMonitoringOn": bool(driver_status.monitor_on and driver_status.face_detected),
+      "canMonoTimes": list(CS.canMonoTimes),
+      "planMonoTime": sm.logMonoTime['plan'],
+      "pathPlanMonoTime": sm.logMonoTime['pathPlan'],
+      "enabled": isEnabled(state),
+      "active": isActive(state),
+      "vEgo": CS.vEgo,
+      "vEgoRaw": CS.vEgoRaw,
+      "angleSteers": CS.steeringAngle,
+      "curvature": VM.calc_curvature((CS.steeringAngle - sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo),
+      "steerOverride": CS.steeringPressed,
+      "state": state,
+      "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
+      "longControlState": LoC.long_control_state,
+      "vPid": float(LoC.v_pid),
+      "vCruise": float(v_cruise_kph),
+      "upAccelCmd": float(LoC.pid.p),
+      "uiAccelCmd": float(LoC.pid.i),
+      "ufAccelCmd": float(LoC.pid.f),
+      "angleSteersDes": float(LaC.angle_steers_des),
+      "vTargetLead": float(v_acc),
+      "aTarget": float(a_acc),
+      "jerkFactor": float(sm['plan'].jerkFactor),
+      "angleModelBias": 0.,
+      "gpsPlannerActive": sm['plan'].gpsPlannerActive,
+      "vCurvature": sm['plan'].vCurvature,
+      "decelForModel": sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model,
+      "cumLagMs": -rk.remaining * 1000.,
+      "startMonoTime": int(start_time * 1e9),
+      "mapValid": sm['plan'].mapValid,
+      "forceDecel": bool(force_decel),
+    }
 
-  force_decel = driver_status.awareness < 0.
+    if CP.lateralTuning.which() == 'pid':
+      dat.controlsState.lateralControlState.pidState = lac_log
+    else:
+      dat.controlsState.lateralControlState.indiState = lac_log
+    controlsstate.send(dat.to_bytes())
 
-  # controlsState
-  dat = messaging.new_message()
-  dat.init('controlsState')
-  dat.valid = CS.canValid
-  dat.controlsState = {
-    "alertText1": AM.alert_text_1,
-    "alertText2": AM.alert_text_2,
-    "alertSize": AM.alert_size,
-    "alertStatus": AM.alert_status,
-    "alertBlinkingRate": AM.alert_rate,
-    "alertType": AM.alert_type,
-    "alertSound": "",  # no EON sounds yet
-    "awarenessStatus": max(driver_status.awareness, 0.0) if isEnabled(state) else 0.0,
-    "driverMonitoringOn": bool(driver_status.monitor_on and driver_status.face_detected),
-    "canMonoTimes": list(CS.canMonoTimes),
-    "planMonoTime": sm.logMonoTime['plan'],
-    "pathPlanMonoTime": sm.logMonoTime['pathPlan'],
-    "enabled": isEnabled(state),
-    "active": isActive(state),
-    "vEgo": CS.vEgo,
-    "vEgoRaw": CS.vEgoRaw,
-    "angleSteers": CS.steeringAngle,
-    "curvature": VM.calc_curvature((CS.steeringAngle - sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo),
-    "steerOverride": CS.steeringPressed,
-    "state": state,
-    "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
-    "longControlState": LoC.long_control_state,
-    "vPid": float(LoC.v_pid),
-    "vCruise": float(v_cruise_kph),
-    "upAccelCmd": float(LoC.pid.p),
-    "uiAccelCmd": float(LoC.pid.i),
-    "ufAccelCmd": float(LoC.pid.f),
-    "angleSteersDes": float(LaC.angle_steers_des),
-    "vTargetLead": float(v_acc),
-    "aTarget": float(a_acc),
-    "jerkFactor": float(sm['plan'].jerkFactor),
-    "angleModelBias": 0.,
-    "gpsPlannerActive": sm['plan'].gpsPlannerActive,
-    "vCurvature": sm['plan'].vCurvature,
-    "decelForModel": sm['plan'].longitudinalPlanSource == log.Plan.LongitudinalPlanSource.model,
-    "cumLagMs": -rk.remaining * 1000.,
-    "startMonoTime": int(start_time * 1e9),
-    "mapValid": sm['plan'].mapValid,
-    "forceDecel": bool(force_decel),
-  }
+    # carState
+    cs_send = messaging.new_message()
+    cs_send.init('carState')
+    cs_send.valid = CS.canValid
+    cs_send.carState = CS
+    cs_send.carState.events = events
+    carstate.send(cs_send.to_bytes())
 
-  if CP.lateralTuning.which() == 'pid':
-    dat.controlsState.lateralControlState.pidState = lac_log
-  else:
-    dat.controlsState.lateralControlState.indiState = lac_log
-  controlsstate.send(dat.to_bytes())
+    # carEvents - logged every second or on change
+    events_bytes = events_to_bytes(events)
+    if (sm.frame % int(1. / DT_CTRL) == 0) or (events_bytes != events_prev):
+      ce_send = messaging.new_message()
+      ce_send.init('carEvents', len(events))
+      ce_send.carEvents = events
+      carevents.send(ce_send.to_bytes())
 
-  # carState
-  cs_send = messaging.new_message()
-  cs_send.init('carState')
-  cs_send.valid = CS.canValid
-  cs_send.carState = CS
-  cs_send.carState.events = events
-  carstate.send(cs_send.to_bytes())
+    # carParams - logged every 50 seconds (> 1 per segment)
+    if (sm.frame % int(50. / DT_CTRL) == 0):
+      cp_send = messaging.new_message()
+      cp_send.init('carParams')
+      cp_send.carParams = CP
+      carparams.send(cp_send.to_bytes())
 
-  # carEvents - logged every second or on change
-  events_bytes = events_to_bytes(events)
-  if (sm.frame % int(1. / DT_CTRL) == 0) or (events_bytes != events_prev):
-    ce_send = messaging.new_message()
-    ce_send.init('carEvents', len(events))
-    ce_send.carEvents = events
-    carevents.send(ce_send.to_bytes())
+    # carControl
+    cc_send = messaging.new_message()
+    cc_send.init('carControl')
+    cc_send.valid = CS.canValid
+    cc_send.carControl = CC
+    carcontrol.send(cc_send.to_bytes())
 
-  # carParams - logged every 50 seconds (> 1 per segment)
-  if (sm.frame % int(50. / DT_CTRL) == 0):
-    cp_send = messaging.new_message()
-    cp_send.init('carParams')
-    cp_send.carParams = CP
-    carparams.send(cp_send.to_bytes())
-
-  # carControl
-  cc_send = messaging.new_message()
-  cc_send.init('carControl')
-  cc_send.valid = CS.canValid
-  cc_send.carControl = CC
-  carcontrol.send(cc_send.to_bytes())
-
-  return CC, events_bytes
-
+    return CC, events_bytes
+  except Exception as e:
+    print e
 
 def controlsd_thread(gctx=None):
   gc.disable()

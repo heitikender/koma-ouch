@@ -74,7 +74,8 @@ void *safety_setter_thread(void *s) {
   size_t value_vin_sz = 0;
 
   // switch to no_output when CarVin param is read
-  while (1) {
+  //while (1) {
+  while (0) {
     if (do_exit) return NULL;
     const int result = read_db_value(NULL, "CarVin", &value_vin, &value_vin_sz);
     if (value_vin_sz > 0) {

@@ -45,7 +45,7 @@ class CarInterface(object):
     print("CarParams setting fingerprint and safety")
     ret.carName = "mitsubishi"
     ret.carFingerprint = "MITSUBISHI MIEV"
-    ret.carVin = ""
+    ret.carVin = "1234567890abcdefg"
     ret.isPandaBlack = False
     
     ret.safetyModel = car.CarParams.SafetyModel.toyota
@@ -118,86 +118,86 @@ class CarInterface(object):
    # returns a car.CarState
    def update(self, c, can_strings):
      # ******************* do can recv *******************
-     self.cp.update_strings(int(sec_since_boot() * 1e9), can_strings)
+     try:
+       self.cp.update_strings(int(sec_since_boot() * 1e9), can_strings)
 
 
-     self.CS.update(self.cp)
+       self.CS.update(self.cp)
 
-     # create message
-     ret = car.CarState.new_message()
+       # create message
+       ret = car.CarState.new_message()
+       ret.canValid = True
+       # speeds
+       ret.vEgo = self.CS.v_ego
+       ret.vEgoRaw = self.CS.v_ego_raw
+       ret.aEgo = self.CS.a_ego
+       ret.yawRate = self.VM.yaw_rate(self.CS.angle_steers * CV.DEG_TO_RAD, self.CS.v_ego)
+       ret.standstill = self.CS.standstill
 
-     ret.canValid = True
+       # gear shifter
+       ret.gearShifter = self.CS.gear_shifter
 
-     # speeds
-     ret.vEgo = self.CS.v_ego
-     ret.vEgoRaw = self.CS.v_ego_raw
-     ret.aEgo = self.CS.a_ego
-     ret.yawRate = self.VM.yaw_rate(self.CS.angle_steers * CV.DEG_TO_RAD, self.CS.v_ego)
-     ret.standstill = self.CS.standstill
+       # gas pedal
+       ret.gas = self.CS.car_gas
+       ret.gasPressed = self.CS.pedal_gas > 0
 
-     # gear shifter
-     ret.gearShifter = self.CS.gear_shifter
+       # brake pedal
+       ret.brake = self.CS.user_brake
+       ret.brakePressed = False #self.CS.brake_pressed != 0
+       ret.brakeLights = False #self.CS.brake_lights
 
-     # gas pedal
-     ret.gas = self.CS.car_gas
-     ret.gasPressed = self.CS.pedal_gas > 0
+       # steering wheel
+       ret.steeringAngle = self.CS.angle_steers
+       ret.steeringRate = self.CS.angle_steers_rate
 
-     # brake pedal
-     ret.brake = self.CS.user_brake
-     ret.brakePressed = False #self.CS.brake_pressed != 0
-     ret.brakeLights = False #self.CS.brake_lights
+       ret.steeringTorque = self.CS.steer_torque_driver
+       ret.steeringPressed = self.CS.steer_override
 
-     # steering wheel
-     ret.steeringAngle = self.CS.angle_steers
-     ret.steeringRate = self.CS.angle_steers_rate
-
-     ret.steeringTorque = self.CS.steer_torque_driver
-     ret.steeringPressed = self.CS.steer_override
-
-     # cruise state
-     ret.cruiseState.enabled = self.CS.pcm_acc_active
-     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
-     ret.cruiseState.available = bool(self.CS.main_on)
-     ret.cruiseState.speedOffset = 0.
-
-     ret.doorOpen = False #not self.CS.door_all_closed
-     ret.seatbeltUnlatched = False #not self.CS.seatbelt
+       # cruise state
+       ret.cruiseState.enabled = self.CS.pcm_acc_active
+       ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
+       ret.cruiseState.available = bool(self.CS.main_on)
+       ret.cruiseState.speedOffset = 0.
+       ret.cruiseState.standstill = False
+       ret.doorOpen = False #not self.CS.door_all_closed
+       ret.seatbeltUnlatched = False #not self.CS.seatbelt
      
-     # events
-     events = []
+       # events
+       events = []
 
-     if not ret.gearShifter == 'drive' and self.CP.enableDsu:
-       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-     if ret.doorOpen:
-       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-     if ret.seatbeltUnlatched:
-       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-     if self.CS.esp_disabled and self.CP.enableDsu:
-       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-     if not self.CS.main_on and self.CP.enableDsu:
-       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
-     if ret.gearShifter == 'reverse' and self.CP.enableDsu:
-       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-     if self.CS.steer_error:
-       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
-     if self.CS.low_speed_lockout and self.CP.enableDsu:
-       events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
-     if ret.vEgo < self.CP.minEnableSpeed and self.CP.enableDsu:
-       events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
-       if c.actuators.gas > 0.1:
-         # some margin on the actuator to not false trigger cancellation while stopping
-         events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
-       if ret.vEgo < 0.001:
-         # while in standstill, send a user alert
-         events.append(create_event('manualRestart', [ET.WARNING]))
+       if not ret.gearShifter == 'drive' and self.CP.enableDsu:
+         events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+       if ret.doorOpen:
+         events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+       if ret.seatbeltUnlatched:
+         events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+       if self.CS.esp_disabled and self.CP.enableDsu:
+         events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+       if not self.CS.main_on and self.CP.enableDsu:
+         events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
+       if ret.gearShifter == 'reverse' and self.CP.enableDsu:
+         events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+#     if self.CS.steer_error:
+#       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
+#     if self.CS.low_speed_lockout and self.CP.enableDsu:
+#       events.append(create_event('lowSpeedLockout', [ET.NO_ENTRY, ET.PERMANENT]))
+       if ret.vEgo < self.CP.minEnableSpeed and self.CP.enableDsu:
+         events.append(create_event('speedTooLow', [ET.NO_ENTRY]))
+#       if c.actuators.gas > 0.1:
+#         # some margin on the actuator to not false trigger cancellation while stopping
+#         events.append(create_event('speedTooLow', [ET.IMMEDIATE_DISABLE]))
+         if ret.vEgo < 0.001:
+           # while in standstill, send a user alert
+           events.append(create_event('manualRestart', [ET.WARNING]))
 
-     ret.events = events
+       ret.events = events
 
-     self.gas_pressed_prev = ret.gasPressed
-     self.brake_pressed_prev = ret.brakePressed
-     self.cruise_enabled_prev = ret.cruiseState.enabled
-
-     return ret.as_reader()
+       self.gas_pressed_prev = ret.gasPressed
+       self.brake_pressed_prev = ret.brakePressed
+       self.cruise_enabled_prev = ret.cruiseState.enabled
+       return ret.as_reader()
+     except Exception as e:
+       print e
 
    # pass in a car.CarControl
    # to be called @ 100hz

@@ -1,3 +1,4 @@
+import socket
 import struct
 import numpy as np
 from common.kalman.simple_kalman import KF1D
@@ -19,6 +20,7 @@ def get_can_parser(CP):
     ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
     ("GEAR", "GEAR_PACKET", 0),
     ("SPEED", "COMBOMETER", 0),
+    ("RPM", "MOTOR", 0)
   ]
 
   checks = [
@@ -57,9 +59,9 @@ class CarState(object):
                          C=[1.0, 0.0],
                          K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
+    self.pcm_acc_status = 0
     self.pcm_acc_active = False
   def update(self, cp):
-
     # update prevs, update must run once per loop
 #     self.prev_left_blinker_on = self.left_blinker_on
 #     self.prev_right_blinker_on = self.right_blinker_on
@@ -81,7 +83,7 @@ class CarState(object):
     # self.v_wheel_fr = cp.vl["ABS_FRONT"]['WHEEL_SPEED_FR'] * CV.KPH_TO_MS
     # self.v_wheel_rl = cp.vl["ABS_REAR"]['WHEEL_SPEED_RL'] * CV.KPH_TO_MS
     # self.v_wheel_rr = cp.vl["ABS_REAR"]['WHEEL_SPEED_RR'] * CV.KPH_TO_MS
-    v_wheel = cp.vl["COMBOMETER"]['SPEED'] * CV.KPH_TO_MS
+    v_wheel = cp.vl["MOTOR"]["RPM"] * CV.KPH_TO_MS
 
     # Kalman filter
     if abs(v_wheel - self.v_ego) > 2.0:  # Prevent large accelerations when car starts at non zero speed
@@ -114,13 +116,14 @@ class CarState(object):
 
     #cruise control
     if not self.pcm_acc_active:
-      self.v_cruise_pcm = cp.vl["COMBOMETER"]['SPEED']
-    self.pcm_acc_status = 8 # cp.vl["PCM_CRUISE"]['CRUISE_STATE'] # 8
+      self.pcm_acc_status = 0
+      self.v_cruise_pcm = cp.vl["MOTOR"]["RPM"]
+    else:
+      self.pcm_acc_status = 8 # cp.vl["PCM_CRUISE"]['CRUISE_STATE'] # 8
     self.brake_lights = False #bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
     try:
-      data, addr = sock.recvfrom(1) # buffer size is 1 byte and unpacks to bool
+      data, addr = self.sock.recvfrom(1) # buffer size is 1 byte and unpacks to bool
       self.pcm_acc_active = (bool(struct.unpack('b', data)[0]))
-      print("Received message from address:", addr)
-      print("PCM_ACC_ACTIVE:", self.pcm_acc_active)
-    except:
+    except Exception as e:
+      print e
       pass
