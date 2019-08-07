@@ -449,6 +449,7 @@ def controlsd_thread(gctx=None):
   controller_available = CP.enableCamera and CI.CC is not None and not passive
   read_only = not car_recognized or not controller_available
   if read_only:
+    print 'IS READ-ONLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     CP.safetyModel = car.CarParams.SafetyModel.elm327   # diagnostic only
 
   # Write CarParams for radard and boardd safety mode

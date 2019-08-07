@@ -22,6 +22,8 @@ class Server:
       self.steering = unpacked[0]
       self.acceleration = unpacked[1]
       print("Received message from address:", addr)
+      print 0, unpacked[0]
+      print 1, unpacked[1]
     #   print("Set Engaged to", ENGAGED)
   def stop(self):
     self.p.join()
