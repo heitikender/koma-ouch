@@ -341,12 +341,12 @@ void can_health(void *s) {
   } else {
     healthData.setStarted(health.started);
   }
-  healthData.setControlsAllowed(health.controls_allowed);
-  healthData.setGasInterceptorDetected(health.gas_interceptor_detected);
+  healthData.setControlsAllowed(true); // health.controls_allowed
+  healthData.setGasInterceptorDetected(false); //health.gas_interceptor_detected
   healthData.setHasGps(is_pigeon);
-  healthData.setCanSendErrs(health.can_send_errs);
-  healthData.setCanFwdErrs(health.can_fwd_errs);
-  healthData.setGmlanSendErrs(health.gmlan_send_errs);
+  healthData.setCanSendErrs(0); //health.can_send_errs
+  healthData.setCanFwdErrs(0); //health.can_fwd_errs
+  healthData.setGmlanSendErrs(0); //health.gmlan_send_errs
   healthData.setHwType(hw_type);
 
   // send to health
