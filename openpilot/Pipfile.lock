@@ -2727,7 +2727,7 @@
                 "sha256:ca68f7eb91e6101300ffc59a59c3b5600359a0ab6f2e1e8cde4a8a65ec21bb92"
             ],
             "index": "pypi",
-            "version": "==1.13.0rc0"
+            "version": ">=1.15"
         },
         "termcolor": {
             "hashes": [
