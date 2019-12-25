@@ -2323,7 +2323,7 @@
                 "sha256:4850c3e04b2040e4fd262d1047797473d1815b37a073807e7b80304c1c5f4848",
                 "sha256:89b90ee3816ed440c68ac7b6143244ae7d56a46a49295fbac8e6696482e596d1"
             ],
-            "version": "==3.8.2.post1"
+            "version": ">=3.9.0"
         },
         "python-logstash": {
             "hashes": [
